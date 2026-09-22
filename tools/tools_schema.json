@@ -1,0 +1,61 @@
+[
+  {
+    "type": "function",
+    "function": {
+      "name": "check_calendar_availability",
+      "description": "Checks the live Google Calendar for available 30-minute meeting slots with Tariq and the BrainCX solutions engineering team for a given date and timezone.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "description": "The date to check availability for in YYYY-MM-DD format (e.g., '2026-09-24')."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The timezone of the caller, e.g., 'America/New_York', 'America/Los_Angeles', 'Europe/London', or 'Asia/Manila'. Defaults to 'America/New_York'."
+          },
+          "time_preference": {
+            "type": "string",
+            "enum": ["morning", "afternoon", "any"],
+            "description": "Optional preference for morning or afternoon slots."
+          }
+        },
+        "required": ["date"]
+      }
+    }
+  },
+  {
+    "type": "function",
+    "function": {
+      "name": "create_calendar_booking",
+      "description": "Creates a confirmed 30-minute discovery meeting on the live Google Calendar with Tariq and the BrainCX solutions team, and sends calendar invite with Google Meet link.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The full name of the visitor booking the meeting."
+          },
+          "email": {
+            "type": "string",
+            "description": "The verified email address of the visitor to send the calendar invite and confirmation."
+          },
+          "datetime": {
+            "type": "string",
+            "description": "The selected start date and time in ISO 8601 format (e.g., '2026-09-24T14:00:00Z' or '2026-09-24T10:00:00-04:00')."
+          },
+          "timezone": {
+            "type": "string",
+            "description": "The visitor's timezone, e.g., 'America/New_York'."
+          },
+          "visitor_notes": {
+            "type": "string",
+            "description": "Brief notes on the visitor's industry vertical (e.g. Higher Ed, Healthcare, Telecom) and current contact center situation."
+          }
+        },
+        "required": ["name", "email", "datetime"]
+      }
+    }
+  }
+]

@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BrainCX | AI CX Operator for High-Consequence Verticals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@vapi-ai/web@latest/dist/index.umd.js"></script>
+  <style>
+    :root {
+      --bg-primary: #090D16;
+      --bg-secondary: #0F172A;
+      --bg-surface: #1E293B;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-highlight: rgba(56, 189, 248, 0.3);
+      --accent-blue: #38BDF8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --text-primary: #F8FAFC;
+      --text-secondary: #94A3B8;
+      --text-muted: #64748B;
+      --success-green: #10B981;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Ambient background grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 1;
+      width: 100%;
+    }
+
+    /* Navbar */
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding: 20px 0;
+      background: rgba(9, 13, 22, 0.8);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .nav-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .logo-badge {
+      font-size: 0.7rem;
+      background: rgba(56, 189, 248, 0.1);
+      color: var(--accent-blue);
+      border: 1px solid var(--border-highlight);
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-weight: 500;
+    }
+
+    /* Hero Section */
+    .hero {
+      padding: 70px 0 50px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-color);
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      color: var(--accent-blue);
+      margin-bottom: 24px;
+    }
+
+    .hero-badge span.pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      max-width: 850px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .hero h1 span.gradient-text {
+      background: linear-gradient(135deg, #FFFFFF 30%, var(--accent-blue) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p.lead {
+      color: var(--text-secondary);
+      font-size: 1.15rem;
+      max-width: 680px;
+      margin: 0 auto 36px;
+    }
+
+    /* Metrics Bar */
+    .metrics-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 40px 0;
+    }
+
+    .metric-card {
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: left;
+    }
+
+    .metric-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-mono);
+      margin-bottom: 4px;
+    }
+
+    .metric-lbl {
+      color: var(--text-secondary);
+      font-size: 0.85rem;
+    }
+
+    /* Interactive Voice Console Card */
+    .voice-console {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-highlight);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 50px var(--accent-glow);
+      border-radius: 20px;
+      padding: 36px;
+      margin: 20px auto 60px;
+      max-width: 720px;
+      text-align: center;
+      position: relative;
+    }
+
+    .call-state-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    .state-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .state-indicator.active {
+      background: var(--success-green);
+      box-shadow: 0 0 12px var(--success-green);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Animated Visualizer Waves */
+    .wave-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      height: 60px;
+      margin: 20px 0;
+    }
+
+    .wave-bar {
+      width: 5px;
+      height: 12px;
+      background: var(--accent-blue);
+      border-radius: 99px;
+      transition: height 0.15s ease;
+      opacity: 0.4;
+    }
+
+    .wave-container.speaking .wave-bar {
+      opacity: 1;
+      animation: wave 0.8s ease-in-out infinite alternate;
+    }
+
+    .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+    .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+    .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+    .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+    .wave-bar:nth-child(6) { animation-delay: 0.25s; }
+    .wave-bar:nth-child(7) { animation-delay: 0.15s; }
+
+    @keyframes wave {
+      0% { height: 10px; }
+      100% { height: 48px; }
+    }
+
+    /* Action Call Buttons */
+    .btn-call {
+      background: #FFFFFF;
+      color: #090D16;
+      border: none;
+      font-family: var(--font-main);
+      font-weight: 600;
+      font-size: 1.05rem;
+      padding: 16px 36px;
+      border-radius: 999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-call:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(255, 255, 255, 0.25);
+    }
+
+    .btn-call.in-call {
+      background: #EF4444;
+      color: #FFFFFF;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-call.in-call:hover {
+      background: #DC2626;
+      box-shadow: 0 6px 25px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Transcript Log Box */
+    .transcript-box {
+      margin-top: 28px;
+      text-align: left;
+      background: rgba(9, 13, 22, 0.6);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 16px;
+      max-height: 180px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+    }
+
+    .transcript-box .empty-msg {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 12px 0;
+    }
+
+    .transcript-turn {
+      margin-bottom: 10px;
+      line-height: 1.4;
+    }
+
+    .transcript-turn strong {
+      color: var(--accent-blue);
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .transcript-turn.user strong {
+      color: #A78BFA;
+    }
+
+    /* Footer */
+    footer {
+      margin-top: auto;
+      border-top: 1px solid var(--border-color);
+      padding: 24px 0;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    /* Config Modal / Inputs for Tester */
+    .config-strip {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .input-pill {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-color);
+      color: var(--text-primary);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      width: 280px;
+    }
+
+    .input-pill:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+
+  <header>
+    <div class="container nav-inner">
+      <div class="logo">
+        <span>BrainCX</span>
+        <span class="logo-badge">Live Voice Agent</span>
+      </div>
+      <div style="font-size: 0.85rem; color: var(--text-secondary);">
+        Technical Assessment • Junior Solution Engineer
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="pulse-dot"></span>
+        AI CX Operator for High-Consequence Verticals
+      </div>
+      <h1>
+        We Redesign, Build, and Run <br>
+        <span class="gradient-text">Customer Conversations.</span>
+      </h1>
+      <p class="lead">
+        Powered by AI, managed by us. We clone a client's best agents—including voice, empathy, and objection handling—to give existing teams more capacity.
+      </p>
+
+      <!-- Reference Facts Metrics Bar -->
+      <div class="metrics-bar">
+        <div class="metric-card">
+          <div class="metric-val">31%</div>
+          <div class="metric-lbl">Contact rate against a 5% baseline</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">98%</div>
+          <div class="metric-lbl">Self-service resolution</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">Sub-300ms</div>
+          <div class="metric-lbl">Real-time edge response</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-val">&lt; 1%</div>
+          <div class="metric-lbl">Callers ever ask if speaking with AI</div>
+        </div>
+      </div>
+
+      <!-- Interactive Voice Console -->
+      <div class="voice-console">
+        <div class="call-state-pill">
+          <span class="state-indicator" id="stateDot"></span>
+          <span id="callStatusText">Ready to connect</span>
+        </div>
+
+        <div class="wave-container" id="visualizer">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+
+        <div>
+          <button class="btn-call" id="callButton" onclick="toggleCall()">
+            <svg id="callIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+            </svg>
+            <span id="buttonLabel">Start Web Voice Call</span>
+          </button>
+        </div>
+
+        <!-- Live Transcript Feedback -->
+        <div class="transcript-box" id="transcriptBox">
+          <div class="empty-msg" id="emptyMsg">Click "Start Web Voice Call" to speak with Alex...</div>
+        </div>
+
+        <!-- Public Key & Assistant Configuration -->
+        <div class="config-strip">
+          <input type="text" id="vapiPublicKey" class="input-pill" placeholder="Vapi Public Key (e.g. 484a...)" />
+          <input type="text" id="vapiAssistantId" class="input-pill" placeholder="Vapi Assistant ID (e.g. 9b12...)" />
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      BrainCX AI Inc. • West Palm Beach, Florida • Founded 2021 by Tariq Alinur & Rose Flores • braincx.com
+    </div>
+  </footer>
+
+  <script>
+    let vapi = null;
+    let isCallActive = false;
+
+    const callButton = document.getElementById('callButton');
+    const buttonLabel = document.getElementById('buttonLabel');
+    const stateDot = document.getElementById('stateDot');
+    const callStatusText = document.getElementById('callStatusText');
+    const visualizer = document.getElementById('visualizer');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const emptyMsg = document.getElementById('emptyMsg');
+    const vapiPublicKeyInput = document.getElementById('vapiPublicKey');
+    const vapiAssistantIdInput = document.getElementById('vapiAssistantId');
+
+    // Load saved credentials from localStorage if available
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedKey = localStorage.getItem('vapi_public_key');
+      const savedId = localStorage.getItem('vapi_assistant_id');
+      if (savedKey) vapiPublicKeyInput.value = savedKey;
+      if (savedId) vapiAssistantIdInput.value = savedId;
+    });
+
+    async function toggleCall() {
+      if (isCallActive) {
+        endCall();
+      } else {
+        startCall();
+      }
+    }
+
+    async function startCall() {
+      const publicKey = vapiPublicKeyInput.value.trim();
+      const assistantId = vapiAssistantIdInput.value.trim();
+
+      if (!publicKey || !assistantId) {
+        alert('Please enter your Vapi Public Key and Assistant ID in the fields below the call button.');
+        return;
+      }
+
+      localStorage.setItem('vapi_public_key', publicKey);
+      localStorage.setItem('vapi_assistant_id', assistantId);
+
+      updateStatus('Connecting...', true);
+
+      try {
+        if (!vapi) {
+          vapi = new window.Vapi(publicKey);
+          setupVapiListeners();
+        }
+        await vapi.start(assistantId);
+      } catch (err) {
+        console.error('Call failed:', err);
+        updateStatus('Connection failed. Check keys.', false);
+      }
+    }
+
+    function endCall() {
+      if (vapi) {
+        vapi.stop();
+      }
+      isCallActive = false;
+      updateStatus('Call ended', false);
+      callButton.classList.remove('in-call');
+      buttonLabel.innerText = 'Start Web Voice Call';
+      visualizer.classList.remove('speaking');
+    }
+
+    function setupVapiListeners() {
+      vapi.on('call-start', () => {
+        isCallActive = true;
+        updateStatus('Connected to Alex (Live)', true);
+        callButton.classList.add('in-call');
+        buttonLabel.innerText = 'End Call';
+        if (emptyMsg) emptyMsg.style.display = 'none';
+      });
+
+      vapi.on('call-end', () => {
+        endCall();
+      });
+
+      vapi.on('speech-start', () => {
+        visualizer.classList.add('speaking');
+        updateStatus('Alex is speaking...', true);
+      });
+
+      vapi.on('speech-end', () => {
+        visualizer.classList.remove('speaking');
+        updateStatus('Listening to you...', true);
+      });
+
+      vapi.on('message', (message) => {
+        if (message.type === 'transcript') {
+          appendTranscript(message.role, message.transcript);
+        }
+      });
+
+      vapi.on('error', (err) => {
+        console.error('Vapi error:', err);
+        updateStatus('Error occurred in call', false);
+      });
+    }
+
+    function updateStatus(text, isActive) {
+      callStatusText.innerText = text;
+      if (isActive) {
+        stateDot.classList.add('active');
+      } else {
+        stateDot.classList.remove('active');
+      }
+    }
+
+    function appendTranscript(role, text) {
+      if (!text) return;
+      if (emptyMsg) emptyMsg.style.display = 'none';
+
+      const turn = document.createElement('div');
+      turn.className = `transcript-turn ${role}`;
+      turn.innerHTML = `<strong>${role === 'user' ? 'You' : 'Alex (BrainCX)'}:</strong> ${text}`;
+      transcriptBox.appendChild(turn);
+      transcriptBox.scrollTop = transcriptBox.scrollHeight;
+    }
+  </script>
+</body>
+</html>
