@@ -1,6 +1,6 @@
 /**
  * BrainCX Technical Assessment - Live Google Calendar Webhook & Confirmation Engine
- * Version 2.0: Universal Vapi format handling + Smart Date Validation
+ * Version 3.0: Intelligent Relative Date Parsing ("friday", "tomorrow", etc.) + Universal Vapi Support
  */
 
 function doPost(e) {
@@ -39,25 +39,22 @@ function doPost(e) {
       parameters = request.parameters || request;
     }
 
-    // 2. Auto-detection fallback based on payload fields
+    // 2. Auto-detection fallback
     if (!functionName || functionName === "") {
-      if (parameters.email || parameters.name || parameters.datetime) {
+      if (parameters.email || parameters.name || (parameters.datetime && parameters.email)) {
         functionName = "create_calendar_booking";
-      } else if (parameters.date) {
+      } else {
         functionName = "check_calendar_availability";
       }
     }
 
     var result;
-    if (functionName === "check_calendar_availability" || parameters.date) {
+    if (functionName === "check_calendar_availability") {
       result = handleCheckAvailability(parameters);
-    } else if (functionName === "create_calendar_booking" || parameters.email) {
+    } else if (functionName === "create_calendar_booking") {
       result = handleCreateBooking(parameters);
     } else {
-      result = {
-        status: "error",
-        message: "Unable to identify function: " + functionName
-      };
+      result = handleCheckAvailability(parameters);
     }
 
     var responsePayload = {
@@ -68,6 +65,8 @@ function doPost(e) {
         }
       ],
       status: result.status,
+      current_date: result.current_date,
+      target_date: result.date,
       available_slots: result.available_slots,
       booking_id: result.booking_id,
       message: result.message
@@ -85,41 +84,68 @@ function doPost(e) {
 }
 
 /**
- * Validates and normalizes date so it is never in the past.
+ * Intelligently resolves any date input:
+ * - "today", "tomorrow", "friday", "next monday", or ISO "YYYY-MM-DD"
  */
-function normalizeTargetDate(dateStr) {
+function resolveDynamicDate(rawDate) {
   var today = new Date();
-  today.setHours(0, 0, 0, 0);
+  var input = (rawDate || "").toString().toLowerCase().trim();
 
-  if (!dateStr) {
-    // Default to tomorrow
+  var daysMap = {
+    "sunday": 0, "sun": 0,
+    "monday": 1, "mon": 1,
+    "tuesday": 2, "tue": 2,
+    "wednesday": 3, "wed": 3,
+    "thursday": 4, "thu": 4,
+    "friday": 5, "fri": 5,
+    "saturday": 6, "sat": 6
+  };
+
+  if (!input || input === "today") {
+    return today.toISOString().split('T')[0];
+  }
+
+  if (input === "tomorrow") {
     var tomorrow = new Date(today.getTime() + 86400000);
     return tomorrow.toISOString().split('T')[0];
   }
 
-  var parts = dateStr.split("-");
-  var year = parseInt(parts[0], 10);
-  var month = parseInt(parts[1], 10) - 1;
-  var day = parseInt(parts[2], 10);
-
-  var target = new Date(year, month, day);
-
-  // If the target is in the past (e.g. caller or LLM said June 2026 when it's September 2026),
-  // snap forward to the upcoming Friday or tomorrow
-  if (target < today) {
-    // Return this upcoming Friday
-    var dayOfWeek = today.getDay(); // 0 is Sun, 2 is Tue, 5 is Fri
-    var daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-    if (daysUntilFriday === 0) daysUntilFriday = 7;
-    var upcomingFriday = new Date(today.getTime() + daysUntilFriday * 86400000);
-    return upcomingFriday.toISOString().split('T')[0];
+  // Check if day of week mentioned (e.g. "friday" or "this friday")
+  for (var dayName in daysMap) {
+    if (input.indexOf(dayName) !== -1) {
+      var targetDay = daysMap[dayName];
+      var currentDay = today.getDay();
+      var diff = (targetDay - currentDay + 7) % 7;
+      if (diff === 0) diff = 7; // Next occurrence
+      var nextDate = new Date(today.getTime() + diff * 86400000);
+      return nextDate.toISOString().split('T')[0];
+    }
   }
 
-  return dateStr;
+  // If already standard YYYY-MM-DD
+  if (input.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    var parts = input.split("-");
+    var parsed = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    today.setHours(0,0,0,0);
+    if (parsed < today) {
+      // If past date, snap to upcoming Friday
+      var daysToFriday = (5 - today.getDay() + 7) % 7;
+      if (daysToFriday === 0) daysToFriday = 7;
+      var upcomingFriday = new Date(today.getTime() + daysToFriday * 86400000);
+      return upcomingFriday.toISOString().split('T')[0];
+    }
+    return input;
+  }
+
+  // Default to upcoming Friday
+  var d = (5 - today.getDay() + 7) % 7;
+  if (d === 0) d = 7;
+  var fallback = new Date(today.getTime() + d * 86400000);
+  return fallback.toISOString().split('T')[0];
 }
 
 function handleCheckAvailability(params) {
-  var dateStr = normalizeTargetDate(params.date);
+  var dateStr = resolveDynamicDate(params.date);
   var userTimezone = params.timezone || "America/New_York";
   var timePref = params.time_preference || "any";
 
@@ -162,9 +188,14 @@ function handleCheckAvailability(params) {
     }
   });
 
+  var todayFormatted = Utilities.formatDate(new Date(), userTimezone, "EEEE, MMMM d, yyyy");
+  var targetFormatted = Utilities.formatDate(dayStart, userTimezone, "EEEE, MMMM d, yyyy");
+
   return {
     status: "success",
+    current_date: todayFormatted,
     date: dateStr,
+    date_display: targetFormatted,
     timezone: userTimezone,
     available_slots: availableSlots.slice(0, 3),
     total_slots_open: availableSlots.length
@@ -182,15 +213,14 @@ function handleCreateBooking(params) {
     return { status: "error", message: "Missing email address for booking." };
   }
 
-  // Ensure datetime is in upcoming 2026, not past
-  var startTime = datetimeStr ? new Date(datetimeStr) : new Date(Date.now() + 86400000);
-  if (startTime < new Date()) {
-    // If in past, schedule for upcoming Friday at 10 AM
-    var today = new Date();
-    var dayOfWeek = today.getDay();
-    var daysUntilFriday = (5 - dayOfWeek + 7) % 7;
-    if (daysUntilFriday === 0) daysUntilFriday = 7;
-    startTime = new Date(today.getFullYear(), today.getMonth(), today.getDate() + daysUntilFriday, 10, 0, 0);
+  var startTime;
+  if (datetimeStr && !isNaN(Date.parse(datetimeStr))) {
+    startTime = new Date(datetimeStr);
+  } else {
+    // If relative date or missing, book upcoming Friday 10 AM
+    var resolvedDate = resolveDynamicDate(params.date || "friday");
+    var p = resolvedDate.split("-");
+    startTime = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), 10, 0, 0);
   }
 
   var endTime = new Date(startTime.getTime() + 30 * 60 * 1000);
