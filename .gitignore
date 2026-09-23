@@ -58,3 +58,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Private Local Documentation & Scripts (Kept locally, excluded from GitHub)
+docs/
