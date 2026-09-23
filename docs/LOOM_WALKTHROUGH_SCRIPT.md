@@ -22,9 +22,9 @@
 > *The goal was to engineer a production-ready voice agent for the BrainCX website that qualifies inbound enterprise visitors and books live meetings directly on Google Calendar.*
 > 
 > *To adhere strictly to the free-tier and zero-failure constraints, I designed a 3-tier architecture:*
-> 1. *Speech & LLM Layer:* Vapi orchestration powered by Deepgram Nova-2 for sub-150ms transcription, GPT-4.1 for instruction adherence, and Cartesia for natural human speech cadence.
-> 2. *Webhook & Execution Layer:* A serverless Google Apps Script webhook that natively interfaces with Google Calendar and MailApp.
-> 3. *Option 1 Bonus:* An automated, instant branded email confirmation sent immediately upon booking.*"
+> 1. *Speech & LLM Layer:* Vapi orchestration combining **Soniox STT RT v5** (boasting a 1.8% Word Error Rate for phonetic accuracy), **OpenAI GPT-5.6 Terra** for high-intelligence reasoning and tool-calling precision, and **Elliot (Vapi v2)** with a 92 Humanness score for natural conversational pacing.
+> 2. *Webhook & Execution Layer:* A serverless Google Apps Script webhook that natively interfaces with Google Calendar and MailApp with deterministic query routing (`?action=create_calendar_booking`).
+> 3. *Section 8 Extension:* An automated, instant branded email confirmation sent immediately upon booking.
 
 ---
 
