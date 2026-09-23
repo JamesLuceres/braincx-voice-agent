@@ -220,34 +220,121 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    .wave-container {
+    /* 3D Dynamic Kinetic Orb & Engaging Motion */
+    .motion-core-wrapper {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 10px auto 25px;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 6px;
-      height: 60px;
-      margin: 20px 0;
+      perspective: 800px;
     }
 
-    .wave-bar {
-      width: 5px;
-      height: 12px;
-      background: var(--accent-blue);
-      border-radius: 99px;
-      transition: height 0.15s ease;
-      opacity: 0.4;
+    .ambient-glow-backdrop {
+      position: absolute;
+      width: 180px;
+      height: 180px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(37, 99, 235, 0.15) 50%, transparent 75%);
+      border-radius: 50%;
+      filter: blur(28px);
+      animation: breatheGlow 4s ease-in-out infinite alternate;
+      pointer-events: none;
     }
 
-    .wave-container.speaking .wave-bar {
-      opacity: 1;
-      animation: wave 0.8s ease-in-out infinite alternate;
+    .kinetic-sphere {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      transform-style: preserve-3d;
+      animation: rotateSphere 18s linear infinite;
     }
 
-    .wave-bar:nth-child(2) { animation-delay: 0.1s; }
-    .wave-bar:nth-child(3) { animation-delay: 0.2s; }
-    .wave-bar:nth-child(4) { animation-delay: 0.3s; }
-    .wave-bar:nth-child(5) { animation-delay: 0.4s; }
-    .wave-bar:nth-child(6) { animation-delay: 0.25s; }
+    .kinetic-sphere.active {
+      animation: rotateSphere 8s linear infinite;
+    }
+
+    .kinetic-sphere.speaking {
+      animation: rotateSphere 4s linear infinite;
+    }
+
+    .orbit-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 1.5px solid rgba(56, 189, 248, 0.4);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
+    }
+
+    .orbit-ring:nth-child(1) {
+      transform: rotateX(65deg) rotateY(15deg);
+      border-color: rgba(56, 189, 248, 0.6);
+    }
+    .orbit-ring:nth-child(2) {
+      transform: rotateX(-65deg) rotateY(35deg);
+      border-color: rgba(147, 197, 253, 0.5);
+    }
+    .orbit-ring:nth-child(3) {
+      transform: rotateY(70deg) rotateZ(25deg);
+      border-color: rgba(96, 165, 250, 0.6);
+    }
+    .orbit-ring:nth-child(4) {
+      transform: rotateX(25deg) rotateY(-60deg);
+      border-color: rgba(56, 189, 248, 0.4);
+      border-style: dashed;
+    }
+
+    .central-core {
+      position: absolute;
+      width: 46px;
+      height: 46px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(circle at 30% 30%, #FFFFFF, #38BDF8 60%, #1D4ED8 100%);
+      border-radius: 50%;
+      box-shadow: 0 0 30px #38BDF8, 0 0 60px rgba(56, 189, 248, 0.5);
+      animation: pulseCore 3s ease-in-out infinite alternate;
+    }
+
+    .speaking .central-core {
+      animation: pulseCoreFast 0.8s ease-in-out infinite alternate;
+      box-shadow: 0 0 45px #38BDF8, 0 0 80px rgba(56, 189, 248, 0.8);
+    }
+
+    .particle-dot {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #38BDF8;
+    }
+
+    .particle-dot:nth-child(5) { top: 10%; left: 50%; }
+    .particle-dot:nth-child(6) { bottom: 15%; right: 20%; }
+    .particle-dot:nth-child(7) { top: 40%; left: 5%; }
+
+    @keyframes rotateSphere {
+      0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+      100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(180deg); }
+    }
+
+    @keyframes pulseCore {
+      0% { transform: translate(-50%, -50%) scale(0.92); opacity: 0.9; }
+      100% { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+    }
+
+    @keyframes pulseCoreFast {
+      0% { transform: translate(-50%, -50%) scale(0.85); }
+      100% { transform: translate(-50%, -50%) scale(1.25); }
+    }
+
+    @keyframes breatheGlow {
+      0% { transform: scale(0.85); opacity: 0.5; }
+      100% { transform: scale(1.15); opacity: 0.85; }
+    }
     .wave-bar:nth-child(7) { animation-delay: 0.15s; }
 
     @keyframes wave {
@@ -376,10 +463,6 @@
 
   <main class="container">
     <section class="hero">
-      <div class="hero-badge">
-        <span class="pulse-dot"></span>
-        AI CX Operator for High-Consequence Verticals
-      </div>
       <h1>
         We Redesign, Build, and Run <br>
         <span class="gradient-text">Customer Conversations.</span>
@@ -413,14 +496,19 @@
           <span id="callStatusText">Ready to connect</span>
         </div>
 
-        <div class="wave-container" id="visualizer">
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
-          <div class="wave-bar"></div>
+        <!-- 3D Engaging Motion Core (Roobinium/Trading Inspired) -->
+        <div class="motion-core-wrapper" id="motionCore">
+          <div class="ambient-glow-backdrop"></div>
+          <div class="kinetic-sphere" id="kineticSphere">
+            <div class="orbit-ring"></div>
+            <div class="orbit-ring"></div>
+            <div class="orbit-ring"></div>
+            <div class="orbit-ring"></div>
+            <div class="particle-dot"></div>
+            <div class="particle-dot"></div>
+            <div class="particle-dot"></div>
+            <div class="central-core"></div>
+          </div>
         </div>
 
         <div>
@@ -458,7 +546,7 @@
     const buttonLabel = document.getElementById('buttonLabel');
     const stateDot = document.getElementById('stateDot');
     const callStatusText = document.getElementById('callStatusText');
-    const visualizer = document.getElementById('visualizer');
+    const kineticSphere = document.getElementById('kineticSphere');
     const transcriptBox = document.getElementById('transcriptBox');
     const emptyMsg = document.getElementById('emptyMsg');
     const vapiPublicKeyInput = document.getElementById('vapiPublicKey');
@@ -514,7 +602,10 @@
       updateStatus('Call ended', false);
       callButton.classList.remove('in-call');
       buttonLabel.innerText = 'Start Web Voice Call';
-      visualizer.classList.remove('speaking');
+      if (kineticSphere) {
+        kineticSphere.classList.remove('speaking');
+        kineticSphere.classList.remove('active');
+      }
     }
 
     function setupVapiListeners() {
@@ -523,6 +614,7 @@
         updateStatus('Connected to Alex (Live)', true);
         callButton.classList.add('in-call');
         buttonLabel.innerText = 'End Call';
+        if (kineticSphere) kineticSphere.classList.add('active');
         if (emptyMsg) emptyMsg.style.display = 'none';
       });
 
@@ -531,12 +623,12 @@
       });
 
       vapi.on('speech-start', () => {
-        visualizer.classList.add('speaking');
+        if (kineticSphere) kineticSphere.classList.add('speaking');
         updateStatus('Alex is speaking...', true);
       });
 
       vapi.on('speech-end', () => {
-        visualizer.classList.remove('speaking');
+        if (kineticSphere) kineticSphere.classList.remove('speaking');
         updateStatus('Listening to you...', true);
       });
 
