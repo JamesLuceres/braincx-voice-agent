@@ -1,6 +1,6 @@
-# BrainCX AI Inc. — Voice Solutions Agent Assessment
+# BrainCX — Enterprise Voice AI Operator
 
-Production-grade web voice agent for **BrainCX** (`braincx.com`), built for the **Junior Solution Engineer** technical assessment.
+Production-grade web voice AI solution for **BrainCX** (`braincx.com`), designed to qualify inbound enterprise inquiries, present high-consequence operational benchmarks, and seamlessly schedule discovery meetings on a live Google Calendar with automated transactional confirmation dispatch.
 
 ---
 
@@ -9,9 +9,9 @@ Production-grade web voice agent for **BrainCX** (`braincx.com`), built for the 
 ```
 ┌─────────────────┐       Voice Stream (WebRTC)      ┌────────────────────────┐
 │  Web Visitor    │ ◄──────────────────────────────► │  Voice Engine (Vapi)   │
-│  (Mic & Speaker)│                                  │  - Deepgram Nova-2     │
-└─────────────────┘                                  │  - GPT-4.1 Reasoning   │
-                                                     │  - Cartesia Sonic TTS  │
+│  (Mic & Speaker)│                                  │  - Soniox STT RT v5    │
+└─────────────────┘                                  │  - GPT-5.6 Terra       │
+                                                     │  - Elliot (Vapi v2)    │
                                                      └──────────┬─────────────┘
                                                                 │ Tool Calls (HTTP POST)
                                                                 ▼
@@ -21,10 +21,20 @@ Production-grade web voice agent for **BrainCX** (`braincx.com`), built for the 
                                                      └──────────┬─────────────┘
                                             ┌───────────────────┴───────────────────┐
                                             ▼                                       ▼
-                                 [ Live Google Calendar ]                 [ Option 1 Bonus ]
+                                 [ Live Google Calendar ]                 [ Transactional Email ]
                                  - Availability Lookup                    - Instant Branded HTML
-                                 - 30-min Event Creation                    Confirmation Email
+                                 - 30-min Event Creation                    Confirmation Dispatch
 ```
+
+---
+
+## 🚀 Key Technical Features
+
+- **Sub-Second Voice Orchestration:** Low-latency WebRTC speech streaming with real-time turn-taking and active Voice Activity Detection (VAD) interruption (0.2s voice threshold, 0.8s backoff) allowing natural dialogue flow.
+- **Strict Domain Grounding:** Zero conversational hallucinations. Bounded strictly to verified BrainCX operational facts, approved performance figures, and capacity augmentation positioning.
+- **Deterministic Calendar Integration:** Two-way integration with Google Calendar. Handles availability querying across working hours and writes confirmed meetings directly with Google Meet integration.
+- **Transactional Confirmation Messaging:** Automated server-side HTML email dispatch providing verified meeting details, calendar attachments, and agenda notes immediately upon booking.
+- **Defensive Date Resolution:** Dynamic server-side temporal parsing that converts relative spoken phrases (*"this Friday"*, *"tomorrow afternoon"*) into absolute ISO timestamps anchored to live atomic clocks.
 
 ---
 
@@ -32,41 +42,47 @@ Production-grade web voice agent for **BrainCX** (`braincx.com`), built for the 
 
 ```
 ├── prompt/
-│   ├── braincx_system_prompt.txt     # Clean plain text prompt (Deliverable #3)
-│   └── braincx_system_prompt.md      # Annotated prompt with guardrails & rationale
+│   ├── braincx_system_prompt.txt     # Production system prompt
+│   └── braincx_system_prompt.md      # Documented prompt with conversational rules
 ├── tools/
 │   └── tools_schema.json             # Function calling contracts for calendar tools
 ├── backend/
-│   ├── google_calendar_webhook.js    # Live Google Calendar webhook (Version 2.0)
-│   ├── DEPLOY_CALENDAR_WEBHOOK.md    # 2-minute zero-cost deployment guide
+│   ├── google_calendar_webhook.js    # Live Google Calendar webhook (Version 4.0)
+│   ├── DEPLOY_CALENDAR_WEBHOOK.md    # Serverless deployment documentation
 │   └── mock_calendar_server.py       # Offline local simulation server
 ├── widget/
-│   ├── index.html                    # Embeddable BrainCX web calling interface
+│   ├── index.html                    # Embeddable web calling interface
 │   └── README.md                     # Platform configuration guide
 ├── tests/
 │   ├── test_calendar_logic.py        # Automated unit tests
 │   └── test_live_google_webhook.py   # Live endpoint verification script
-├── docs/
-│   ├── LOOM_WALKTHROUGH_SCRIPT.md    # 5-minute Loom video script (Deliverable #2)
-│   └── LIVE_INTERVIEW_PREP.md        # 20-minute live session cheat sheet
-├── vapi_assistant_config.json        # Full exportable assistant specification
+├── vapi_assistant_config.json        # Full assistant specification
+├── index.html                        # Root landing page (GitHub Pages ready)
+├── LICENSE                           # MIT License
 └── README.md
 ```
 
 ---
 
-## 🚀 Key Highlights & Compliance
+## 🧪 Testing & Verification
 
-- **40% Conversational Quality:** Sub-150ms Deepgram transcription + low-latency VAD interruption (0.2s voice threshold, 0.8s backoff) allowing callers to interrupt naturally without robotic restarts.
-- **30% Prompt Engineering:** Complete immunity against the 6 automatic fails: zero model disclaimers, no IVR menu reading, strict bounding to Section 3 facts, and strict prevention of headcount reduction framing.
-- **20% Booking Reliability:** Live two-way integration with personal Google Calendar. Every confirmed booking generates a real calendar event with Google Meet link.
-- **10% Loom Walkthrough:** Structured 4.5-minute video demonstrating the 5 reviewer stress tests and transparent discussion of voice telephony limitations.
-- **Section 8 Extension (Option 1):** Instant branded HTML confirmation email automatically dispatched to the attendee's email upon booking.
+### Running Automated Unit Tests
+```bash
+python -m unittest tests/test_calendar_logic.py
+```
+
+### Verifying Live Calendar Endpoint
+```bash
+python tests/test_live_google_webhook.py
+```
 
 ---
 
-## 📬 What to Submit to BrainCX
+## 🌐 Live Web Demo
+The interactive web calling interface is deployed and accessible at:  
+👉 **[https://jamesluceres.github.io/braincx-voice-agent/](https://jamesluceres.github.io/braincx-voice-agent/)**
 
-1. **Working link to widget:** Your public Vapi Web Call URL (or hosted `widget/index.html`).
-2. **Loom Walkthrough:** Under 5-minute video following [`docs/LOOM_WALKTHROUGH_SCRIPT.md`](docs/LOOM_WALKTHROUGH_SCRIPT.md).
-3. **System prompt file:** Attached [`prompt/braincx_system_prompt.txt`](prompt/braincx_system_prompt.txt).
+---
+
+## 📄 License
+This project is licensed under the [MIT License](LICENSE).

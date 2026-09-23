@@ -1,57 +1,63 @@
 /**
- * BrainCX Technical Assessment - Live Google Calendar Webhook & Confirmation Engine
- * Version 3.0: Intelligent Relative Date Parsing ("friday", "tomorrow", etc.) + Universal Vapi Support
+ * BrainCX Enterprise Voice Solutions - Live Google Calendar Webhook & Confirmation Engine
+ * Version 4.0: URL Action Query Routing + Deep Payload Property Inspection
  */
 
 function doPost(e) {
   try {
-    var rawData = e.postData.contents;
+    var rawData = e.postData ? e.postData.contents : "{}";
     var request = JSON.parse(rawData);
     
+    // 1. Check URL query parameter (100% deterministic routing)
     var functionName = "";
+    if (e.parameter && e.parameter.action) {
+      functionName = e.parameter.action;
+    }
+
     var parameters = {};
     var toolCallId = "call_1";
 
-    // 1. Extract from Vapi toolCalls / functionCall / REST payloads
+    // 2. Extract parameters from all possible Vapi payload wrappers
     if (request.message) {
       if (request.message.toolCalls && request.message.toolCalls.length > 0) {
         var tc = request.message.toolCalls[0];
         toolCallId = tc.id || "call_1";
         if (tc.function) {
-          functionName = tc.function.name || "";
+          if (!functionName) functionName = tc.function.name || "";
           parameters = typeof tc.function.arguments === "string" 
             ? JSON.parse(tc.function.arguments) 
             : (tc.function.arguments || {});
         }
       } else if (request.message.functionCall) {
-        functionName = request.message.functionCall.name || "";
+        if (!functionName) functionName = request.message.functionCall.name || "";
         parameters = request.message.functionCall.parameters || {};
         toolCallId = request.message.functionCall.id || "call_1";
       }
     } else if (request.toolCall) {
-      functionName = request.toolCall.function ? request.toolCall.function.name : "";
+      if (!functionName) functionName = request.toolCall.function ? request.toolCall.function.name : "";
       parameters = request.toolCall.function ? request.toolCall.function.arguments : {};
       toolCallId = request.toolCall.id || "call_1";
     }
 
-    if (!functionName) functionName = request.function || request.name || request.action || "";
+    if (!functionName) {
+      functionName = request.function || request.name || request.action || "";
+    }
+
     if (Object.keys(parameters).length === 0) {
       parameters = request.parameters || request;
     }
 
-    // 2. Auto-detection fallback
-    if (!functionName || functionName === "") {
-      if (parameters.email || parameters.name || (parameters.datetime && parameters.email)) {
-        functionName = "create_calendar_booking";
-      } else {
-        functionName = "check_calendar_availability";
-      }
-    }
+    // 3. Flatten nested properties if any
+    var email = parameters.email || request.email || (parameters.parameters ? parameters.parameters.email : "");
+    var name = parameters.name || request.name || (parameters.parameters ? parameters.parameters.name : "");
+    var dt = parameters.datetime || request.datetime || (parameters.parameters ? parameters.parameters.datetime : "");
 
+    // 4. If functionName is create_calendar_booking OR email was provided -> ALWAYS BOOK!
     var result;
-    if (functionName === "check_calendar_availability") {
-      result = handleCheckAvailability(parameters);
-    } else if (functionName === "create_calendar_booking") {
+    if (functionName === "create_calendar_booking" || (email && email.indexOf("@") !== -1)) {
+      parameters.email = email;
+      parameters.name = name || "BrainCX Visitor";
+      parameters.datetime = dt;
       result = handleCreateBooking(parameters);
     } else {
       result = handleCheckAvailability(parameters);
@@ -66,9 +72,11 @@ function doPost(e) {
       ],
       status: result.status,
       current_date: result.current_date,
-      target_date: result.date,
+      target_date: result.date || result.start_time,
       available_slots: result.available_slots,
       booking_id: result.booking_id,
+      attendee_email: result.attendee_email,
+      confirmation_email_sent: result.confirmation_email_sent,
       message: result.message
     };
 
@@ -83,21 +91,14 @@ function doPost(e) {
   }
 }
 
-/**
- * Intelligently resolves any date input:
- * - "today", "tomorrow", "friday", "next monday", or ISO "YYYY-MM-DD"
- */
 function resolveDynamicDate(rawDate) {
   var today = new Date();
   var input = (rawDate || "").toString().toLowerCase().trim();
 
   var daysMap = {
-    "sunday": 0, "sun": 0,
-    "monday": 1, "mon": 1,
-    "tuesday": 2, "tue": 2,
-    "wednesday": 3, "wed": 3,
-    "thursday": 4, "thu": 4,
-    "friday": 5, "fri": 5,
+    "sunday": 0, "sun": 0, "monday": 1, "mon": 1,
+    "tuesday": 2, "tue": 2, "wednesday": 3, "wed": 3,
+    "thursday": 4, "thu": 4, "friday": 5, "fri": 5,
     "saturday": 6, "sat": 6
   };
 
@@ -110,38 +111,32 @@ function resolveDynamicDate(rawDate) {
     return tomorrow.toISOString().split('T')[0];
   }
 
-  // Check if day of week mentioned (e.g. "friday" or "this friday")
   for (var dayName in daysMap) {
     if (input.indexOf(dayName) !== -1) {
       var targetDay = daysMap[dayName];
       var currentDay = today.getDay();
       var diff = (targetDay - currentDay + 7) % 7;
-      if (diff === 0) diff = 7; // Next occurrence
+      if (diff === 0) diff = 7;
       var nextDate = new Date(today.getTime() + diff * 86400000);
       return nextDate.toISOString().split('T')[0];
     }
   }
 
-  // If already standard YYYY-MM-DD
   if (input.match(/^\d{4}-\d{2}-\d{2}$/)) {
     var parts = input.split("-");
     var parsed = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
     today.setHours(0,0,0,0);
     if (parsed < today) {
-      // If past date, snap to upcoming Friday
       var daysToFriday = (5 - today.getDay() + 7) % 7;
       if (daysToFriday === 0) daysToFriday = 7;
-      var upcomingFriday = new Date(today.getTime() + daysToFriday * 86400000);
-      return upcomingFriday.toISOString().split('T')[0];
+      return new Date(today.getTime() + daysToFriday * 86400000).toISOString().split('T')[0];
     }
     return input;
   }
 
-  // Default to upcoming Friday
   var d = (5 - today.getDay() + 7) % 7;
   if (d === 0) d = 7;
-  var fallback = new Date(today.getTime() + d * 86400000);
-  return fallback.toISOString().split('T')[0];
+  return new Date(today.getTime() + d * 86400000).toISOString().split('T')[0];
 }
 
 function handleCheckAvailability(params) {
@@ -209,15 +204,14 @@ function handleCreateBooking(params) {
   var userTimezone = params.timezone || "America/New_York";
   var notes = params.visitor_notes || "Discussion on BrainCX AI CX operations and capacity scaling.";
 
-  if (!email) {
-    return { status: "error", message: "Missing email address for booking." };
+  if (!email || email.indexOf("@") === -1) {
+    return { status: "error", message: "Missing valid email address for booking." };
   }
 
   var startTime;
   if (datetimeStr && !isNaN(Date.parse(datetimeStr))) {
     startTime = new Date(datetimeStr);
   } else {
-    // If relative date or missing, book upcoming Friday 10 AM
     var resolvedDate = resolveDynamicDate(params.date || "friday");
     var p = resolvedDate.split("-");
     startTime = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10), 10, 0, 0);

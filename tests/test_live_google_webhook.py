@@ -43,7 +43,7 @@ def test_create_booking():
             "email": "vpluceres@up.edu.ph",
             "datetime": "2026-09-25T14:00:00Z",
             "timezone": "America/New_York",
-            "visitor_notes": "Live test booking from BrainCX Junior Solution Engineer candidate assessment."
+            "visitor_notes": "Live test booking from BrainCX Voice Solutions Operator."
         }
     }
     
